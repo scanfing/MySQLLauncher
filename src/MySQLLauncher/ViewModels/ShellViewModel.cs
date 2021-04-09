@@ -213,13 +213,6 @@ namespace MySQLLauncher.ViewModels
         {
             var lst = await _launchCfgService.LoadConfigs();
             MySQLLaunchModels.AddRange(lst);
-
-            if (MySQLLaunchModels.Count == 0)
-            {
-                var model = new MySQLLaunchModel();
-
-                MySQLLaunchModels.Add(model);
-            }
             CurrentModel = MySQLLaunchModels.FirstOrDefault();
         }
 
