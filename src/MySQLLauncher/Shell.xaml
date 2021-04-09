@@ -1,0 +1,86 @@
+﻿<Window
+    x:Class="MySQLLauncher.Shell"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+    xmlns:local="clr-namespace:MySQLLauncher"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="clr-namespace:MySQLLauncher.Views"
+    xmlns:vm="clr-namespace:MySQLLauncher.ViewModels"
+    Title="MySQL启动器"
+    Width="800"
+    Height="560"
+    MinWidth="1000"
+    FontSize="14"
+    WindowStartupLocation="CenterScreen"
+    mc:Ignorable="d">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding LoadedCommand}" />
+        </i:EventTrigger>
+        <i:EventTrigger EventName="Unloaded">
+            <i:InvokeCommandAction Command="{Binding UnLoadedCommand}" />
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
+    <Window.DataContext>
+        <vm:ShellViewModel />
+    </Window.DataContext>
+    <Border>
+        <Grid x:Name="root">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48" />
+                <RowDefinition Height="1*" />
+                <RowDefinition Height="32" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="2*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid>
+                <views:ToolBarView />
+            </Grid>
+            <Grid Grid.Row="1">
+                <ListView
+                    ItemsSource="{Binding Path=MySQLLaunchModels}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                    SelectedItem="{Binding CurrentModel, Mode=TwoWay}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,8">
+                                <StackPanel>
+                                    <TextBlock
+                                        FontSize="14"
+                                        FontWeight="Bold"
+                                        Text="{Binding Path=Name}" />
+                                    <TextBlock Text="{Binding Path=Description}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+            <Grid
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="1">
+                <Border
+                    Margin="8"
+                    Background="AliceBlue"
+                    BorderBrush="CornflowerBlue"
+                    CornerRadius="8">
+                    <views:ModelDetailView />
+                </Border>
+            </Grid>
+
+            <Grid Grid.Row="2" Grid.ColumnSpan="2">
+                <Border BorderBrush="CornflowerBlue" BorderThickness="1">
+                    <StatusBar>
+                        <StatusBarItem Content="{Binding StatusText, Mode=OneWay}" />
+                    </StatusBar>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

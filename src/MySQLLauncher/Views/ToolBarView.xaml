@@ -1,0 +1,39 @@
+﻿<UserControl
+    x:Class="MySQLLauncher.Views.ToolBarView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:MySQLLauncher.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    d:DesignHeight="48"
+    d:DesignWidth="800"
+    mc:Ignorable="d">
+    <Grid>
+        <WrapPanel>
+            <WrapPanel.Resources>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Height" Value="36" />
+                    <Setter Property="Width" Value="48" />
+                    <Setter Property="Margin" Value="4" />
+                </Style>
+            </WrapPanel.Resources>
+            <Button Command="{Binding CommandCreateNew}" Content="新建" />
+            <Button Command="{Binding CommandInitMySQLDataDir}" Content="初始化" />
+            <Button
+                Command="{Binding CommandStartMySQL}"
+                CommandParameter="{Binding CurrentModel}"
+                Content="启动" />
+            <Button
+                Command="{Binding CommandStopMySQL}"
+                CommandParameter="{Binding CurrentModel}"
+                Content="停止" />
+            <Button
+                Command="{Binding CommandReStartMySQL}"
+                CommandParameter="{Binding CurrentModel}"
+                Content="重启" />
+            <Button Command="{Binding CommandCopyCurrentLaunchModel}" Content="复制" />
+            <Button Command="{Binding CommandRenameSelectedModel}" Content="重命名" />
+            <Button Command="{Binding CommandDeleteSelectedLaunchModel}" Content="删除" />
+        </WrapPanel>
+    </Grid>
+</UserControl>
