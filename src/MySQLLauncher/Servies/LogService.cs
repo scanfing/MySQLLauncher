@@ -41,7 +41,7 @@ namespace MySQLLauncher.Servies
         {
             LogContentChanged?.Invoke(this, content);
             Directory.CreateDirectory(LogDir);
-            var file = $"{dstModule}.{DateTime.Now:d}.log";
+            var file = $"{dstModule}.{DateTime.Now:yyyy-MM-dd}.log";
             var logFile = Path.Combine(LogDir, file);
             File.AppendAllText(logFile, content + Environment.NewLine);
         }
