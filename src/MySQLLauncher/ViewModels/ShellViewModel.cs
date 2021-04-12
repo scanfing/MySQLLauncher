@@ -197,7 +197,7 @@ namespace MySQLLauncher.ViewModels
                     MySQLInstanceModels.Add(instanceModel);
                     var id = Path.GetFileNameWithoutExtension(instance.InstanceIniPath);
                     _CfgInstanceDict.Add(id, instanceModel);
-                    if (CurrentModel.ID == id)
+                    if (CurrentModel?.ID == id)
                         RaisePropertyChanged(nameof(CurrentModel));
                 }
             });
