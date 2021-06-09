@@ -202,7 +202,7 @@ namespace MySQLLauncher.Servies
                 if (ppinfo != null && !string.IsNullOrWhiteSpace(pinfo.CommandLine))
                 {
                     var args = pinfo.CommandLine.Split(' ');
-                    var instancepath = pinfo.CommandLine.Substring(0, pinfo.CommandLine.IndexOf(" ")).Trim('\"');
+                    var instancepath = pinfo.CommandLine.Substring(0, pinfo.CommandLine.IndexOf(" --")).Trim().Trim('\"');
                     var inipath = args.FirstOrDefault(str => str.StartsWith("--defaults-file="));
                     if (string.IsNullOrEmpty(inipath))
                     {
