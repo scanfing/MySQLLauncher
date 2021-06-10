@@ -105,7 +105,8 @@ namespace MySQLLauncher.ViewModels
                 if (SetProperty(ref _currentLaunchModel, value))
                 {
                     CurrentIniModel = value?.IniModel ?? new MySQLIniFileModel();
-                    if (_CfgInstanceDict.TryGetValue(value?.ID, out var instanceModel))
+
+                    if (value != null && _CfgInstanceDict.TryGetValue(value.ID, out var instanceModel))
                         CurrentInstance = instanceModel;
                 }
             }
@@ -148,7 +149,7 @@ namespace MySQLLauncher.ViewModels
             base.OnPropertyChanged(args);
             if (args.PropertyName == nameof(CurrentModel))
             {
-                if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+                if (CurrentModel != null && _CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
                     CurrentInstance = instance;
                 else
                     CurrentInstance = null;
@@ -196,7 +197,7 @@ namespace MySQLLauncher.ViewModels
                     instanceModel = new MySQLInstanceModel(instance.InstancePath, instance.InstanceIniPath, instance.DataDir, instance.ShellProcess.Id, instance.CoreProcess.Id);
                     MySQLInstanceModels.Add(instanceModel);
                     var id = Path.GetFileNameWithoutExtension(instance.InstanceIniPath);
-                    _CfgInstanceDict.Add(id, instanceModel);
+                    _CfgInstanceDict[id] = instanceModel;
                     if (CurrentModel?.ID == id)
                         RaisePropertyChanged(nameof(CurrentModel));
                 }
