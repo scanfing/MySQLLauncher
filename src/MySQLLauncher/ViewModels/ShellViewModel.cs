@@ -58,6 +58,19 @@ namespace MySQLLauncher.ViewModels
             _logService = new LogService();
             _logService.LogContentChanged += _logService_LogContentChanged;
 
+            CommandCreateNew = new CommandImpl(OnRequestCreateNewLaunchModel);
+            CommandCopyCurrentLaunchModel = new CommandImpl(OnRequestCopyCurrentLaunchModel);
+            CommandRenameSelectedModel = new CommandImpl(OnRequestRenameSelectedModel);
+            CommandDeleteSelectedLaunchModel = new CommandImpl(OnRequestDeleteSelectedLaunchModel);
+
+            CommandInitMySQLDataDir = new CommandImpl(OnRequestInitMySQLDataDir);
+            CommandStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStartMySQL, CanStartMySQL);
+            CommandStopMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStopMySQL, CanStopMySQL);
+            CommandReStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestReStartMySQL, CanReStartMySQL);
+
+            CommandRefreshIni = new CommandImpl(OnRequestRefreshIni);
+            CommandSaveIni = new CommandImpl(OnRequestSaveIni);
+
             _ = LoadModels();
         }
 
@@ -65,25 +78,25 @@ namespace MySQLLauncher.ViewModels
 
         #region Properties
 
-        public ICommand CommandCopyCurrentLaunchModel { get; private set; }
+        public CommandImpl CommandCopyCurrentLaunchModel { get; private set; }
 
-        public ICommand CommandCreateNew { get; private set; }
+        public CommandImpl CommandCreateNew { get; private set; }
 
-        public ICommand CommandDeleteSelectedLaunchModel { get; private set; }
+        public CommandImpl CommandDeleteSelectedLaunchModel { get; private set; }
 
-        public ICommand CommandInitMySQLDataDir { get; private set; }
+        public CommandImpl CommandInitMySQLDataDir { get; private set; }
 
-        public ICommand CommandRefreshIni { get; private set; }
+        public CommandImpl CommandRefreshIni { get; private set; }
 
-        public ICommand CommandRenameSelectedModel { get; private set; }
+        public CommandImpl CommandRenameSelectedModel { get; private set; }
 
-        public ICommand CommandReStartMySQL { get; private set; }
+        public CommandImpl<MySQLLaunchModel> CommandReStartMySQL { get; private set; }
 
-        public ICommand CommandSaveIni { get; private set; }
+        public CommandImpl CommandSaveIni { get; private set; }
 
-        public ICommand CommandStartMySQL { get; private set; }
+        public CommandImpl<MySQLLaunchModel> CommandStartMySQL { get; private set; }
 
-        public ICommand CommandStopMySQL { get; private set; }
+        public CommandImpl<MySQLLaunchModel> CommandStopMySQL { get; private set; }
 
         public MySQLIniFileModel CurrentIniModel
         {
@@ -128,19 +141,6 @@ namespace MySQLLauncher.ViewModels
 
         protected override void InitViewModel()
         {
-            CommandCreateNew = new CommandImpl(OnRequestCreateNewLaunchModel);
-            CommandCopyCurrentLaunchModel = new CommandImpl(OnRequestCopyCurrentLaunchModel);
-            CommandRenameSelectedModel = new CommandImpl(OnRequestRenameSelectedModel);
-            CommandDeleteSelectedLaunchModel = new CommandImpl(OnRequestDeleteSelectedLaunchModel);
-
-            CommandInitMySQLDataDir = new CommandImpl(OnRequestInitMySQLDataDir);
-            CommandStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStartMySQL);
-            CommandStopMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStopMySQL);
-            CommandReStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestReStartMySQL);
-
-            CommandRefreshIni = new CommandImpl(OnRequestRefreshIni);
-            CommandSaveIni = new CommandImpl(OnRequestSaveIni);
-
             _dispatcher = Dispatcher.CurrentDispatcher;
         }
 
@@ -153,6 +153,9 @@ namespace MySQLLauncher.ViewModels
                     CurrentInstance = instance;
                 else
                     CurrentInstance = null;
+                CommandStartMySQL.RaiseCanExecuteChanged();
+                CommandStopMySQL.RaiseCanExecuteChanged();
+                CommandReStartMySQL.RaiseCanExecuteChanged();
             }
         }
 
@@ -174,16 +177,21 @@ namespace MySQLLauncher.ViewModels
             StatusText = e;
         }
 
-        private void _mySQLService_InstanceLost(object sender, Core.MySQLInstance e)
+        private void _mySQLService_InstanceLost(object sender, Core.MySQLInstance instance)
         {
             _dispatcher.Invoke(() =>
             {
-                var instanceModel = MySQLInstanceModels.FirstOrDefault(p => p.CoreProcessId == e.CoreProcess.Id && p.ShellProcessId == e.ShellProcess.Id);
+                var instanceModel = MySQLInstanceModels.FirstOrDefault(p => p.CoreProcessId == instance.CoreProcess.Id && p.ShellProcessId == instance.ShellProcess.Id);
                 if (instanceModel == null)
                     return;
 
                 instanceModel.Clear();
                 MySQLInstanceModels.Remove(instanceModel);
+
+                var id = Path.GetFileNameWithoutExtension(instance.InstanceIniPath);
+                _CfgInstanceDict[id] = instanceModel;
+                if (CurrentModel?.ID == id)
+                    RaisePropertyChanged(nameof(CurrentModel));
             });
         }
 
@@ -195,6 +203,7 @@ namespace MySQLLauncher.ViewModels
                 if (instanceModel == null)
                 {
                     instanceModel = new MySQLInstanceModel(instance.InstancePath, instance.InstanceIniPath, instance.DataDir, instance.ShellProcess.Id, instance.CoreProcess.Id);
+                    instanceModel.Status = Core.MySQLInstanceStatus.Running;
                     MySQLInstanceModels.Add(instanceModel);
                     var id = Path.GetFileNameWithoutExtension(instance.InstanceIniPath);
                     _CfgInstanceDict[id] = instanceModel;
@@ -202,6 +211,40 @@ namespace MySQLLauncher.ViewModels
                         RaisePropertyChanged(nameof(CurrentModel));
                 }
             });
+        }
+
+        private bool CanReStartMySQL(MySQLLaunchModel arg)
+        {
+            if (arg == null)
+                return false;
+            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+            {
+                return instance.Status == Core.MySQLInstanceStatus.Running;
+            }
+            return false;
+        }
+
+        private bool CanStartMySQL(MySQLLaunchModel arg)
+        {
+            if (arg == null)
+                return false;
+
+            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+            {
+                return instance.Status == Core.MySQLInstanceStatus.None || instance.Status == Core.MySQLInstanceStatus.Stopped;
+            }
+            return true;
+        }
+
+        private bool CanStopMySQL(MySQLLaunchModel arg)
+        {
+            if (arg == null)
+                return false;
+            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+            {
+                return instance.Status == Core.MySQLInstanceStatus.Running;
+            }
+            return false;
         }
 
         private void Current_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
