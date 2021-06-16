@@ -64,9 +64,9 @@ namespace MySQLLauncher.ViewModels
             CommandDeleteSelectedLaunchModel = new CommandImpl(OnRequestDeleteSelectedLaunchModel);
 
             CommandInitMySQLDataDir = new CommandImpl(OnRequestInitMySQLDataDir);
-            CommandStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStartMySQL, CanStartMySQL);
-            CommandStopMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestStopMySQL, CanStopMySQL);
-            CommandReStartMySQL = new CommandImpl<MySQLLaunchModel>(OnRequestReStartMySQL, CanReStartMySQL);
+            CommandStartMySQL = new CommandImpl(OnRequestStartMySQL, CanStartMySQL);
+            CommandStopMySQL = new CommandImpl(OnRequestStopMySQL, CanStopMySQL);
+            CommandReStartMySQL = new CommandImpl(OnRequestReStartMySQL, CanReStartMySQL);
 
             CommandRefreshIni = new CommandImpl(OnRequestRefreshIni);
             CommandSaveIni = new CommandImpl(OnRequestSaveIni);
@@ -90,13 +90,13 @@ namespace MySQLLauncher.ViewModels
 
         public CommandImpl CommandRenameSelectedModel { get; private set; }
 
-        public CommandImpl<MySQLLaunchModel> CommandReStartMySQL { get; private set; }
+        public CommandImpl CommandReStartMySQL { get; private set; }
 
         public CommandImpl CommandSaveIni { get; private set; }
 
-        public CommandImpl<MySQLLaunchModel> CommandStartMySQL { get; private set; }
+        public CommandImpl CommandStartMySQL { get; private set; }
 
-        public CommandImpl<MySQLLaunchModel> CommandStopMySQL { get; private set; }
+        public CommandImpl CommandStopMySQL { get; private set; }
 
         public MySQLIniFileModel CurrentIniModel
         {
@@ -213,34 +213,38 @@ namespace MySQLLauncher.ViewModels
             });
         }
 
-        private bool CanReStartMySQL(MySQLLaunchModel arg)
+        private bool CanReStartMySQL()
         {
-            if (arg == null)
+            var model = CurrentModel;
+            if (model == null)
                 return false;
-            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+
+            if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
             {
                 return instance.Status == Core.MySQLInstanceStatus.Running;
             }
             return false;
         }
 
-        private bool CanStartMySQL(MySQLLaunchModel arg)
+        private bool CanStartMySQL()
         {
-            if (arg == null)
+            var model = CurrentModel;
+            if (model == null)
                 return false;
 
-            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+            if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
             {
                 return instance.Status == Core.MySQLInstanceStatus.None || instance.Status == Core.MySQLInstanceStatus.Stopped;
             }
             return true;
         }
 
-        private bool CanStopMySQL(MySQLLaunchModel arg)
+        private bool CanStopMySQL()
         {
-            if (arg == null)
+            var model = CurrentModel;
+            if (model == null)
                 return false;
-            if (_CfgInstanceDict.TryGetValue(CurrentModel.ID, out var instance))
+            if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
             {
                 return instance.Status == Core.MySQLInstanceStatus.Running;
             }
@@ -307,8 +311,9 @@ namespace MySQLLauncher.ViewModels
             await _launchCfgService.SaveConfig(CurrentModel);
         }
 
-        private async void OnRequestReStartMySQL(MySQLLaunchModel model)
+        private async void OnRequestReStartMySQL()
         {
+            var model = CurrentModel;
             if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
             {
                 instance.Status = Core.MySQLInstanceStatus.Stoping;
@@ -327,17 +332,27 @@ namespace MySQLLauncher.ViewModels
             await _launchCfgService.SaveConfig(CurrentModel);
         }
 
-        private async void OnRequestStartMySQL(MySQLLaunchModel model)
+        private async void OnRequestStartMySQL()
         {
+            var model = CurrentModel;
+
             if (model is null)
                 return;
+
+            if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
+            {
+                if (instance.Status == Core.MySQLInstanceStatus.Starting || instance.Status == Core.MySQLInstanceStatus.Running)
+                    return;
+            }
+
             var inspath = Path.Combine(model.IniModel.Basedir, "bin", "mysqld.exe");
             var inipath = _mySQLCfgService.GenerateIniFile(model);
             await _mySQLService.StartMySQL(inspath, inipath);
         }
 
-        private void OnRequestStopMySQL(MySQLLaunchModel model)
+        private void OnRequestStopMySQL()
         {
+            var model = CurrentModel;
             if (_CfgInstanceDict.TryGetValue(model.ID, out var instance))
             {
                 _mySQLService.StopMySQL(instance);
